@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+build/
+dist/
+*.egg-info/
+*.egg
+
+.venv/
+venv/
+.env
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+*.swp
+*.swo
+.DS_Store
+
+# Local data and logs (production paths are under /var/, but a dev run may
+# spool here)
+data/spool/
+logs/
+*.jsonl
+*.out.mod

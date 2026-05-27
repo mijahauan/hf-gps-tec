@@ -1,0 +1,128 @@
+# hf-gps-tec configuration template
+#
+# Rendered to /etc/hf-gps-tec/hf-gps-tec-config.toml on
+# install (if not already present).  Edit, then validate with
+# `sudo -u hfgpstec hf-gps-tec validate --json`.
+
+[station]
+# Receiver station identifier — appears in every emitted record as `rx_id`.
+# Use an unambiguous short tag for your site.
+station_id = "AC0G-HFB"
+
+# Receiver geodetic coordinates (degrees, metres).  Used by the inversion
+# pipeline to anchor this end of every observed propagation path.
+latitude_deg  = 0.0
+longitude_deg = 0.0
+altitude_m    = 0.0
+
+# Operator callsign (cosmetic; embedded in records for provenance).
+operator_callsign = ""
+
+# ---------------------------------------------------------------------------
+# ka9q-radio binding — one radiod per recorder instance (templated unit).
+# ---------------------------------------------------------------------------
+
+[ka9q]
+# mDNS status hostname of the local radiod (e.g. "bee1-status.local").
+# Sigmond will override via coordination.env on managed hosts; this is the
+# standalone-safe fallback.
+status_address = ""
+
+# Per-frequency channel bandwidth.  100 kHz total (±50 kHz around carrier)
+# matches the Hysell 2018 §2 decimated rate.  Increase only if the operator
+# knows the local radiod can serve it.
+filter_guard_hz = 1500
+
+# ---------------------------------------------------------------------------
+# Frequency plan — which Tx frequencies this receiver subscribes to.
+# Each entry opens one ka9q-radio channel.
+# ---------------------------------------------------------------------------
+
+[[frequency]]
+center_hz       = 2_720_000
+sample_rate_hz  = 100_000
+enabled         = true
+
+[[frequency]]
+center_hz       = 3_640_000
+sample_rate_hz  = 100_000
+enabled         = true
+
+# ---------------------------------------------------------------------------
+# Processing parameters (Hysell 2018 §2 defaults).
+# ---------------------------------------------------------------------------
+
+[processing]
+chip_microseconds       = 10        # PRN chip duration
+code_chips              = 10_000    # chips per code period (compression ratio)
+code_period_ms          = 100       # = code_chips × chip_microseconds / 1000
+coherent_reps           = 100       # successive code reps in coherent stack
+coherent_seconds        = 10        # = coherent_reps × code_period_ms / 1000
+incoherent_windows      = 6         # 10-s coherent windows per 1-min record
+snr_threshold_db        = 8.0       # locked-mode first-hop detection gate
+max_pseudorange_km      = 15000.0   # cap detection search range
+min_pseudorange_km      = 100.0     # skip ground-wave / direct-path bins
+
+# Code-free detection parameters (used when [mode].mode resolves to
+# "codeless").  The 100-ms autocorrelation needs ~60 s integration to
+# pull a moderate-SNR beacon out of noise; lengthen for weaker signals
+# and shorten for quick first-light checks.
+codeless_integration_seconds    = 60.0
+codeless_detection_threshold_db = 6.0
+
+# ---------------------------------------------------------------------------
+# Transmitter list — which Tx the correlator banks against.  Names must
+# match entries in /etc/hf-gps-tec/stations.toml.
+#
+# Currently only FAIRBANKS is on-air.  CORNELL is planned; leave it in
+# the list if you want the recorder to have a replica ready as soon as
+# that transmitter comes up — correlating against a not-yet-operational
+# Tx is harmless (the receiver simply sees no peak and emits no
+# detection for it).
+# ---------------------------------------------------------------------------
+
+[transmitters]
+enabled = ["FAIRBANKS", "CORNELL"]
+
+# ---------------------------------------------------------------------------
+# Operating mode.
+#
+#   "auto"     — pick automatically: codeless when the PRN code
+#                generator is stubbed, locked otherwise.  Default.
+#   "codeless" — run only the 100-ms autocorrelation detector.  No
+#                per-Tx pseudorange, but confirms beacon presence and
+#                recovers Doppler without knowing the PRN code.
+#                Useful while waiting for the per-Tx PRN spec from the
+#                network operator, or any time first-light verification
+#                is wanted.
+#   "locked"   — run only the full PRN correlator.  Produces
+#                per-(Tx, Rx, freq) pseudorange / Doppler / amplitude
+#                records.  Requires the real PRN spec to be wired into
+#                core/correlate.py.
+# ---------------------------------------------------------------------------
+
+[mode]
+mode = "auto"
+
+# ---------------------------------------------------------------------------
+# Output sinks.
+# ---------------------------------------------------------------------------
+
+[sinks]
+# Per-minute JSONL records — always on.
+local_jsonl     = true
+# Additive HamSCI sink — populates `hf_gps_tec.spots` when sigmond's local
+# SQLite sink at /var/lib/sigmond/sink.db is writable.  Silent no-op
+# otherwise.
+hamsci_sink     = true
+# Legacy `.out.mod` text format consumed by Hysell's focus.c inversion.
+# Not yet implemented; leaving the field so operators can opt in later.
+jro_out_mod     = false
+
+# ---------------------------------------------------------------------------
+# Multi-instance support (sigmond Phase 5).  When sigmond runs `smd instance
+# migrate`, a per-instance config file is created with this block populated.
+# ---------------------------------------------------------------------------
+
+[instance]
+# reporter_id = "AC0G-HFB-default"

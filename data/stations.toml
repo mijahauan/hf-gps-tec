@@ -1,0 +1,65 @@
+# HF beacon network — transmitter and receiver sites.
+#
+# This network is being re-established in North America under the
+# leadership of Dr. David Hysell at Cornell University.  The original
+# Hysell network in Peru, documented in Hysell et al. (2018, JGR Space
+# Physics 123:6851–6864) and Aricoche & Hysell (2024, JGR ML&C 1), is
+# no longer the active transmit infrastructure; the documentation in
+# those papers describes the methodology and DSP chain that the
+# present North American deployment reuses.
+#
+# Update this file as the network expands.  The recorder reads the
+# `transmitters` section to know which (Tx, frequency) replicas to
+# build.  The `receivers` section is informational; the local
+# receiver identifies itself via the `[station]` block in the main
+# config file.
+#
+# NOTE: exact transmitter coordinates below are city-centre
+# approximations pending confirmation from Dr. Hysell; refine
+# before scientific use.
+
+# ---------------------------------------------------------------------------
+# Transmit sites
+# ---------------------------------------------------------------------------
+
+[transmitters.FAIRBANKS]
+name           = "Fairbanks, Alaska"
+status         = "operational"   # only currently-operating transmitter
+latitude_deg   = 64.8378
+longitude_deg  = -147.7164
+altitude_m     = 136.0
+power_watts    = 0.5             # per-frequency continuous power
+antenna        = "inverted-V (assumed; confirm with operator)"
+frequencies_hz = [2_720_000, 3_640_000]
+notes          = "Coordinates are city-centre approximation; the actual transmitter site (likely on or near University of Alaska Fairbanks infrastructure) should be substituted before scientific use."
+
+[transmitters.CORNELL]
+name           = "Ithaca, New York (Cornell University)"
+status         = "planned"
+latitude_deg   = 42.4534
+longitude_deg  = -76.4735
+altitude_m     = 250.0
+power_watts    = 0.5
+antenna        = "inverted-V (assumed; confirm with operator)"
+frequencies_hz = [2_720_000, 3_640_000]
+notes          = "Planned second transmitter; not yet on-air.  Coordinates are approximate Cornell campus position pending confirmation of the actual transmit site."
+
+# ---------------------------------------------------------------------------
+# Receive sites
+# ---------------------------------------------------------------------------
+#
+# Receive sites are not centrally administered: any sigmond station
+# with appropriate HF reception infrastructure can run this client
+# and contribute observations.  The entries here are informational
+# only.  Add a block for your own station if useful for documentation,
+# or leave the section empty and rely on the `[station]` block in
+# the main config.
+
+# Example entry (uncomment and customise for your station):
+#
+# [receivers.MY_STATION]
+# name          = "Operator's station"
+# latitude_deg  = 0.0
+# longitude_deg = 0.0
+# altitude_m    = 0.0
+# notes         = "operator callsign, antenna type, etc."

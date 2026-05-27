@@ -1,0 +1,107 @@
+# hf-gps-tec deploy manifest — declares how this client gets from
+# repo source to its production location. Conforms to the HamSCI client
+# contract v0.7 (sigmond/docs/CLIENT-CONTRACT.md).
+
+[package]
+name             = "hf-gps-tec"
+version          = "0.1.0"
+description      = "HF PRN-coded beacon recorder for ionospheric specification"
+contract_version = "0.7"
+license          = "MIT"
+
+# ---------------------------------------------------------------------------
+# Build phase: install Python package into a venv at
+# /opt/hf-gps-tec/venv. Sigmond's shared ensure_uv helper builds the
+# venv via uv (see scripts/install.sh).
+# ---------------------------------------------------------------------------
+
+[build]
+steps = [
+    "/opt/git/sigmond/hf-gps-tec/scripts/install.sh --build-only",
+]
+produces = [
+    "/opt/hf-gps-tec/venv/bin/hf-gps-tec",
+]
+
+# ---------------------------------------------------------------------------
+# Configuration interview (CONTRACT-v0.5 §14). Wizard not implemented yet;
+# operator hand-edits the config file.
+# ---------------------------------------------------------------------------
+
+# [contract.config]
+# init = "scripts/config-init.sh"
+# edit = "scripts/config-edit.sh"
+
+# ---------------------------------------------------------------------------
+# Install phase: place files at FHS-compliant locations on the target.
+# ---------------------------------------------------------------------------
+
+[install]
+
+[[install.steps]]
+kind = "link"
+src  = "/opt/hf-gps-tec/venv/bin/hf-gps-tec"
+dst  = "/usr/local/bin/hf-gps-tec"
+
+[[install.steps]]
+kind = "link"
+src  = "systemd/hf-gps-tec@.service"
+dst  = "/etc/systemd/system/hf-gps-tec@.service"
+
+[[install.steps]]
+kind      = "render"
+src       = "config/hf-gps-tec-config.toml.template"
+dst       = "/etc/hf-gps-tec/hf-gps-tec-config.toml"
+mode      = "0640"
+owner     = "hfgpstec:hfgpstec"
+if_absent = true
+
+[[install.steps]]
+kind      = "render"
+src       = "data/stations.toml"
+dst       = "/etc/hf-gps-tec/stations.toml"
+mode      = "0644"
+owner     = "hfgpstec:hfgpstec"
+if_absent = true
+
+[[install.steps]]
+kind  = "mkdir"
+dst   = "/var/lib/hf-gps-tec"
+mode  = "0755"
+owner = "hfgpstec:hfgpstec"
+
+[[install.steps]]
+kind  = "mkdir"
+dst   = "/var/log/hf-gps-tec"
+mode  = "0755"
+owner = "hfgpstec:hfgpstec"
+
+# ---------------------------------------------------------------------------
+# Systemd units sigmond should know about for start/stop/status.
+# ---------------------------------------------------------------------------
+
+[systemd]
+units = []
+templated_units = [
+    "hf-gps-tec@.service",
+]
+
+# ---------------------------------------------------------------------------
+# Dependencies sigmond should ensure are present before installing this
+# client.
+# ---------------------------------------------------------------------------
+
+[deps]
+
+[[deps.git]]
+name       = "ka9q-python"
+url        = "https://github.com/ka9q/ka9q-python.git"
+install_to = "/opt/git/sigmond/ka9q-python"
+commit     = ""   # track main; sigmond warns on drift
+
+[[deps.system]]
+packages = [
+    "python3",
+    "python3-venv",
+    "python3-pip",
+]

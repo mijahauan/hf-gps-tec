@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hf-gps-tec"
+version = "0.1.0"
+description = "HF PRN-coded beacon recorder for opportunistic ionospheric sounding"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Michael Hauan (AC0G)", email = "michael.j.hauan@gmail.com" },
+]
+keywords = ["sdr", "ionosphere", "hf", "prn", "beacon", "hamsci", "sigmond"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "ka9q-python>=3.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.scripts]
+hf-gps-tec = "hf_gps_tec.cli:main"
+
+# Sibling editable installs — sigmond fleet upgrade pattern.
+[tool.uv.sources]
+ka9q-python = { path = "../ka9q-python", editable = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+minversion = "7.0"
