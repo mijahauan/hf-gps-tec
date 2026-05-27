@@ -103,11 +103,24 @@ specified about the code structure.
 
 The reference receiver in Hysell 2018 §2 samples directly at
 10 mega-samples per second (MS/s) at an intermediate frequency
-(IF) between 2.72 and 3.64 MHz, then digitally down-converts and
-decimates.  `hf-gps-tec` instead lets `radiod` (ka9q-radio) own
-the in-phase / quadrature (I/Q) down-conversion and decimation:
-one ka9q-radio channel per Tx frequency, ≈100 kilo-samples per
-second (kS/s) wideband complex I/Q, ±50 kHz around the carrier.
+(IF) ≈3.18 MHz (the midpoint between the two carriers), then
+digitally down-converts and decimates in two stages — first to
+1 MS/s across the band, then per-carrier to 100 kilo-samples
+per second (kS/s) I/Q at baseband for each frequency channel.
+Two carriers in, two narrow baseband streams out.
+
+`hf-gps-tec` lets `radiod` (ka9q-radio) own all the
+down-conversion and decimation, producing the same per-carrier
+baseband streams directly: one ka9q-radio channel per Tx
+frequency, 100 kS/s in-phase / quadrature (I/Q) baseband
+(Nyquist ±50 kHz, sufficient for the PRN's ≈100 kHz null-to-null
+bandwidth).  This is mathematically equivalent to Hysell's
+single-IF capture + per-carrier digital down-conversion — both
+deliver each carrier's PRN signal to the DSP as 100 kS/s
+baseband I/Q.  Pulling the per-carrier down-conversion into
+`radiod` avoids re-implementing in Python what `radiod` already
+does natively (and is also the pattern the peer recorders
+`codar-sounder` and `hfdl-recorder` use for per-band channels).
 The remaining DSP runs in Python.
 
 The chain matches Hysell §2 stage-for-stage:

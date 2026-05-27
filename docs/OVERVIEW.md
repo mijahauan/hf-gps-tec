@@ -212,12 +212,58 @@ typical configuration on a sigmond host:
   monitored.
 
 Hysell 2018 §2 specifies the production receiver as sampling at
-10 MS/s at an intermediate frequency between 2.72 and 3.64 MHz,
-then digitally down-converting and decimating to 100
-kilo-samples-per-second (kS/s) I/Q per frequency channel.
-`hf-gps-tec` lets `radiod` own the down-conversion and
-decimation — one `radiod` channel per transmit frequency,
-delivering 100 kS/s wideband complex I/Q to the recorder.
+10 mega-samples-per-second (MS/s) at an intermediate frequency
+≈3.18 MHz (the midpoint between the two carriers), then digitally
+down-converting and decimating in two stages — first to 1 MS/s
+across the whole band, then per-carrier to 100
+kilo-samples-per-second (kS/s) I/Q baseband for each of the two
+frequency channels.  Two carriers in, two narrow baseband streams
+out.
+
+`hf-gps-tec` reaches the same per-carrier baseband streams a
+stage earlier, by letting `radiod` (ka9q-radio) own all the
+down-conversion and decimation — one `radiod` channel per
+transmit frequency, each delivering 100 kS/s complex I/Q
+(Nyquist ±50 kHz, just wide enough to span the PRN waveform's
+≈100 kHz null-to-null bandwidth).  The architectures are
+equivalent:
+
+```
+Hysell 2018 §2 reference pipeline:
+
+    RF (2.7–3.7 MHz band)
+      │
+      ▼  ADC @ 10 MS/s, IF ≈ 3.18 MHz
+      │  (one wide ADC stream capturing both carriers + the gap)
+      │
+      ▼  digital DDC + decimate to 1 MS/s
+      │
+      ▼  per-carrier DDC + decimate to 100 kS/s
+      │
+      ├──► 2.72 MHz baseband, 100 kS/s I/Q
+      └──► 3.64 MHz baseband, 100 kS/s I/Q
+
+hf-gps-tec via ka9q-radio:
+
+    RF (RX888 sees the whole HF spectrum)
+      │
+      ▼  ADC @ 129.6 MS/s (radiod's direct-sample front-end)
+      │
+      ▼  radiod's per-channel DDC + decimate
+      │
+      ├──► 2.72 MHz channel: 100 kS/s I/Q  ─── one ka9q-python MultiStream
+      └──► 3.64 MHz channel: 100 kS/s I/Q  ─── one ka9q-python MultiStream
+```
+
+The dataflow into the correlator / autocorrelator is identical:
+each carrier's PRN-bearing signal arrives as 100 kS/s complex
+I/Q at baseband.  A single wideband ≈3.18 MHz channel would
+have to be ~1 MS/s wide to span both carriers (rather than ~100
+kS/s), and the per-carrier down-conversion would then have to
+be reimplemented in Python — duplicating work that radiod
+already does natively for free.  The peer recorders
+(`codar-sounder`, `hfdl-recorder`) split into per-band channels
+for the same reason.
 
 ### 4.2 Software pipeline
 
