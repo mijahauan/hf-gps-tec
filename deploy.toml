@@ -6,7 +6,7 @@
 name             = "hf-gps-tec"
 version          = "0.1.0"
 description      = "HF PRN-coded beacon recorder for ionospheric specification"
-contract_version = "0.7"
+contract_version = "0.8"
 license          = "MIT"
 
 # ---------------------------------------------------------------------------

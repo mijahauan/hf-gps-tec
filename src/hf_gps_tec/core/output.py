@@ -18,6 +18,7 @@ from typing import Optional
 
 from .. import __version__
 from ..config import Config
+from ..contract import CONTRACT_VERSION
 from .detect import Detection
 from .detect_codeless import CodelessDetection
 
@@ -46,6 +47,11 @@ class OutputSink:
         self.cfg = cfg
         self.instance = instance                # per-instance state dir
         self.data_root = data_root or DEFAULT_DATA_ROOT
+        # Phase v0.8 §19.3: reporter_id stamps every emitted spot row.
+        # Source: [instance].reporter_id from config if present; otherwise
+        # fall back to the systemd instance name (which IS the reporter_id
+        # under MULTI-INSTANCE-ARCHITECTURE.md §3 — they coincide).
+        self.reporter_id = cfg.instance.reporter_id or instance
 
         self._locked_jsonl: Optional[_JsonlWriter] = None
         self._codeless_jsonl: Optional[_JsonlWriter] = None
@@ -71,6 +77,7 @@ class OutputSink:
         record = {
             "time": timestamp_utc.replace(tzinfo=timezone.utc).isoformat(),
             "mode": "locked",
+            "reporter_id": self.reporter_id,
             "tx_id": tx_id,
             "rx_id": rx_id,
             "radiod_id": radiod_id,
@@ -84,7 +91,7 @@ class OutputSink:
             "range_bin": detection.range_bin,
             "n_hops": 1,
             "processing_version": __version__,
-            "contract_version": "0.7",
+            "contract_version": CONTRACT_VERSION,
         }
         if self._locked_jsonl is not None:
             self._locked_jsonl.write(timestamp_utc, record)
@@ -103,6 +110,7 @@ class OutputSink:
         record = {
             "time": timestamp_utc.replace(tzinfo=timezone.utc).isoformat(),
             "mode": "codeless",
+            "reporter_id": self.reporter_id,
             "rx_id": rx_id,
             "radiod_id": radiod_id,
             "frequency_hz": int(frequency_hz),
@@ -118,7 +126,7 @@ class OutputSink:
             "detection": detection.detection,
             "detection_threshold_db": detection.detection_threshold_db,
             "processing_version": __version__,
-            "contract_version": "0.7",
+            "contract_version": CONTRACT_VERSION,
         }
         if self._codeless_jsonl is not None:
             self._codeless_jsonl.write(timestamp_utc, record)

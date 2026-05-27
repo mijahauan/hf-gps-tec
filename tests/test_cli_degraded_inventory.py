@@ -54,7 +54,7 @@ class DegradedInventoryTests(unittest.TestCase):
                             "/etc/hf-gps-tec/hf-gps-tec-config.toml"))
         self.assertEqual(rc, 0)
         self.assertEqual(payload["client"], "hf-gps-tec")
-        self.assertEqual(payload["contract_version"], "0.7")
+        self.assertEqual(payload["contract_version"], "0.8")
         self.assertEqual(payload["instances"], [])
         self.assertIsNone(payload["config_path"])
         # The degraded state must surface as a fail-severity issue so

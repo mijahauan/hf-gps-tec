@@ -25,7 +25,7 @@ def _load_default_stations():
 def test_inventory_required_fields() -> None:
     inv = contract.build_inventory(_load_default_cfg(), _load_default_stations())
     assert inv["client"] == "hf-gps-tec"
-    assert inv["contract_version"] == "0.7"
+    assert inv["contract_version"] == "0.8"
     assert "instances" in inv and len(inv["instances"]) == 1
     inst = inv["instances"][0]
     for key in (

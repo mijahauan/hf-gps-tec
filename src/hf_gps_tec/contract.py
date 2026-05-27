@@ -14,7 +14,7 @@ from .version import GIT_INFO
 from . import __version__
 
 
-CONTRACT_VERSION = "0.7"
+CONTRACT_VERSION = "0.8"
 
 
 # ---------------------------------------------------------------------------
