@@ -8,10 +8,7 @@ Wants=network-online.target
 Type=notify
 User=hfgpstec
 Group=hfgpstec
-ExecStart=/usr/local/bin/hf-gps-tec daemon \
-    --config /etc/hf-gps-tec/hf-gps-tec-config.toml \
-    --radiod-id %i \
-    --instance %i
+ExecStart=/usr/local/bin/hf-gps-tec daemon --instance %i
 Restart=on-failure
 RestartSec=15
 TimeoutStopSec=30

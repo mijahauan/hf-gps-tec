@@ -104,18 +104,24 @@ class _PipelineWorker:
 @dataclass
 class HfGpsTecRecorder:
     cfg: Config
-    radiod_id: str
-    instance: Optional[str] = None
+    instance: str             # = reporter_id ≡ systemd @<i>; also output-path dir
     stations: Optional[StationDb] = None
     _workers: list[_PipelineWorker] = field(default_factory=list, init=False)
     _stop: threading.Event = field(default_factory=threading.Event, init=False)
+
+    @property
+    def radiod_id(self) -> str:
+        """Identifier of the radiod that served the IQ — used for the
+        `radiod_id` field of every emitted record.  Derived from the
+        ka9q status DNS address (canonical sigmond convention)."""
+        return self.cfg.ka9q.status_address or self.instance
 
     def run(self) -> int:
         if self.stations is None:
             self.stations = load_stations()
 
         rx_id = self.cfg.station.station_id
-        sink = OutputSink(self.cfg, radiod_id=self.radiod_id)
+        sink = OutputSink(self.cfg, instance=self.instance)
 
         # One worker per enabled frequency.
         enabled = [f for f in self.cfg.frequencies if f.enabled]

@@ -42,9 +42,9 @@ class OutputSink:
       Sink table: ``hf_gps_tec_codeless.spots``.
     """
 
-    def __init__(self, cfg: Config, radiod_id: str, data_root: Optional[Path] = None):
+    def __init__(self, cfg: Config, instance: str, data_root: Optional[Path] = None):
         self.cfg = cfg
-        self.radiod_id = radiod_id
+        self.instance = instance                # per-instance state dir
         self.data_root = data_root or DEFAULT_DATA_ROOT
 
         self._locked_jsonl: Optional[_JsonlWriter] = None
@@ -52,8 +52,8 @@ class OutputSink:
         self._locked_sink: Optional[_HamsciSinkWriter] = None
         self._codeless_sink: Optional[_HamsciSinkWriter] = None
         if cfg.sinks.local_jsonl:
-            self._locked_jsonl = _JsonlWriter(self.data_root / radiod_id / "locked")
-            self._codeless_jsonl = _JsonlWriter(self.data_root / radiod_id / "codeless")
+            self._locked_jsonl = _JsonlWriter(self.data_root / instance / "locked")
+            self._codeless_jsonl = _JsonlWriter(self.data_root / instance / "codeless")
         if cfg.sinks.hamsci_sink:
             self._locked_sink = _HamsciSinkWriter(table="hf_gps_tec.spots")
             self._codeless_sink = _HamsciSinkWriter(table="hf_gps_tec_codeless.spots")

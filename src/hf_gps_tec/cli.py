@@ -134,7 +134,7 @@ def _handle_daemon(args: argparse.Namespace) -> int:
         return 1
     # Import lazily so a stub config can be validated without numpy/scipy.
     from .core.daemon import HfGpsTecRecorder
-    recorder = HfGpsTecRecorder(cfg=cfg, radiod_id=args.radiod_id, instance=args.instance)
+    recorder = HfGpsTecRecorder(cfg=cfg, instance=args.instance)
     return recorder.run()
 
 
@@ -182,7 +182,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_dae = sub.add_parser("daemon", help="Run the recorder daemon (foreground).")
     _add_config_args(p_dae)
-    p_dae.add_argument("--radiod-id", required=True, help="ka9q-radio radiod identifier.")
+    # No --radiod-id: per the sigmond multi-instance architecture, the
+    # systemd template's @<reporter-id> ≡ --instance, and the radiod
+    # binding is config-driven via the [ka9q] block.
 
     return p
 
