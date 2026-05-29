@@ -107,12 +107,17 @@ fi
 # 5. Config + data directories
 # ---------------------------------------------------------------------------
 
-install -d -m 0750 -o "${USER}" -g "${GROUP}" "${CONF_DIR}"
+install -d -m 0755 -o "${USER}" -g "${GROUP}" "${CONF_DIR}"
 install -d -m 0755 -o "${USER}" -g "${GROUP}" "${DATA_DIR}"
 install -d -m 0755 -o "${USER}" -g "${GROUP}" "${LOG_DIR}"
 
+# CONF_DIR + the rendered config must be world-readable so the
+# sigmond TUI (which runs as the operator's user, not as the
+# client's service user) can list /etc/<client>/ and read every
+# per-instance *.toml.  Matches the convention of every other
+# sigmond client (hf-timestd, wspr-recorder, psk-recorder, …).
 if [[ ! -e "${CONF_DIR}/hf-gps-tec-config.toml" ]]; then
-    install -m 0640 -o "${USER}" -g "${GROUP}" \
+    install -m 0644 -o "${USER}" -g "${GROUP}" \
         "${REPO_ROOT}/config/hf-gps-tec-config.toml.template" \
         "${CONF_DIR}/hf-gps-tec-config.toml"
 fi
