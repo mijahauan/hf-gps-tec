@@ -143,6 +143,21 @@ fi
 
 ln -sfn "${REPO_ROOT}/systemd/hf-gps-tec@.service" \
         /etc/systemd/system/hf-gps-tec@.service
+
+# QA snapshot timer (every 15 min): periodic `hf-gps-tec qa --json`
+# capture for trend monitoring.  Templated per-instance just like the
+# recorder; PartOf the recorder so disabling the recorder also halts
+# snapshots.  Operator enables manually per instance — same pattern as
+# the recorder, no auto-enable.
+install -d -m 0755 -o "${USER}" -g "${GROUP}" "${INSTALL_DIR}/bin"
+install -m 0755 -o "${USER}" -g "${GROUP}" \
+    "${REPO_ROOT}/scripts/qa-snapshot.sh" \
+    "${INSTALL_DIR}/bin/qa-snapshot.sh"
+ln -sfn "${REPO_ROOT}/systemd/hf-gps-tec-qa@.service" \
+        /etc/systemd/system/hf-gps-tec-qa@.service
+ln -sfn "${REPO_ROOT}/systemd/hf-gps-tec-qa@.timer" \
+        /etc/systemd/system/hf-gps-tec-qa@.timer
+
 systemctl daemon-reload
 
 echo
@@ -152,8 +167,11 @@ echo "  cli:       /usr/local/bin/${NAME}"
 echo "  config:    ${CONF_DIR}/hf-gps-tec-config.toml"
 echo "  data:      ${DATA_DIR}"
 echo "  unit:      /etc/systemd/system/hf-gps-tec@.service"
+echo "  qa unit:   /etc/systemd/system/hf-gps-tec-qa@.service"
+echo "  qa timer:  /etc/systemd/system/hf-gps-tec-qa@.timer"
 echo
 echo "next:"
 echo "  1. edit ${CONF_DIR}/hf-gps-tec-config.toml"
 echo "  2. sudo -u ${USER} ${NAME} validate --json"
 echo "  3. sudo systemctl start hf-gps-tec@<radiod-id>"
+echo "  4. sudo systemctl enable --now hf-gps-tec-qa@<radiod-id>.timer"

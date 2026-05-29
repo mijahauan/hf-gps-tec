@@ -1,0 +1,35 @@
+[Unit]
+Description=HF PRN beacon QA snapshot for %i
+Documentation=https://github.com/mijahauan/hf-gps-tec
+# Don't run snapshots before the recorder is up; if it goes down,
+# follow it (PartOf) so we don't keep snapshotting against a stalled
+# daemon.
+After=hf-gps-tec@%i.service
+PartOf=hf-gps-tec@%i.service
+
+[Service]
+Type=oneshot
+User=hfgpstec
+Group=hfgpstec
+# qa-snapshot.sh appends one JSONL row to
+# /var/lib/hf-gps-tec/<reporter_id>/qa/YYYY-MM-DD.jsonl and prints a
+# one-line summary that journald captures.  Exits 0 even on a NULL
+# verdict — only an invocation failure trips systemd.
+ExecStart=/opt/hf-gps-tec/bin/qa-snapshot.sh %i
+
+# Logging — summary goes to the journal under the templated identifier.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hf-gps-tec-qa@%i
+
+# Low priority — must never steal CPU from the recorder.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# Sandboxing.  ReadWritePaths must cover the qa output dir.
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
+ReadWritePaths=/var/lib/hf-gps-tec
