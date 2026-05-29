@@ -175,6 +175,32 @@ def _handle_daemon(args: argparse.Namespace) -> int:
     return recorder.run()
 
 
+def _handle_qa(args: argparse.Namespace) -> int:
+    """Signal-quality diagnostic — `qa --since 1h` etc."""
+    from . import qa as _qa
+    try:
+        since = _qa.parse_duration(args.since)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    try:
+        result = _qa.run_qa(
+            instance=args.instance,
+            since=since,
+            aggregate=args.aggregate,
+        )
+    except (FileNotFoundError, PermissionError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print(_qa.format_human(result))
+    # Exit 1 only on operational error (no data / wrong mode); a NULL
+    # verdict is a successful diagnosis and exits 0.
+    return 1 if result.error else 0
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -223,6 +249,33 @@ def build_parser() -> argparse.ArgumentParser:
     # systemd template's @<reporter-id> ≡ --instance, and the radiod
     # binding is config-driven via the [ka9q] block.
 
+    p_qa = sub.add_parser(
+        "qa",
+        help="Signal-quality diagnostic (Palmer-as-null-control).",
+    )
+    p_qa.add_argument(
+        "--since",
+        default="1h",
+        help="Trailing time window (e.g. 30m, 1h, 24h, 7d).  Default: 1h.",
+    )
+    p_qa.add_argument(
+        "--instance",
+        default=None,
+        help="Instance reporter_id (autopicked when only one is installed).",
+    )
+    p_qa.add_argument(
+        "--aggregate",
+        action="store_true",
+        default=False,
+        help="Sum detections across all frequencies per Tx (default: per-freq).",
+    )
+    p_qa.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Emit machine-readable JSON instead of the text table.",
+    )
+
     # Config command — CLIENT-CONTRACT §14 JSON-roundtrip surface.
     # Sigmond's in-TUI Textual wizard needs `show --json` + `apply
     # --json -`.  hf-gps-tec had no `config` subcommand at all
@@ -264,6 +317,7 @@ def main(argv: list[str] | None = None) -> int:
         "status":    _handle_status,
         "daemon":    _handle_daemon,
         "config":    _handle_config,
+        "qa":        _handle_qa,
     }
     return handlers[args.command](args)
 
