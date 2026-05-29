@@ -1,0 +1,178 @@
+# hf-gps-tec operator-help sidecar.
+#
+# Per-key title / help / example / validator_hint / required, plus
+# `hidden = true` to keep tier-1 invariants off the wizard surface.
+#
+# Three-tier audit applied 2026-05-29:
+#   * tier 1 — PRN-protocol / algorithm constants; hidden.
+#   * tier 2 — site / operator knobs; surfaced with help bodies.
+#   * tier 3 — per-instance differentiators; [instance].reporter_id
+#              is wizard-locked by sigmond directly.
+#
+# The [[frequency]] array-of-tables (per-PRN-beacon sample-rate /
+# center-frequency / enabled flag) is wizard-skipped (nested arrays
+# not editable in TUI); operators drop to $EDITOR for that today.
+
+# --- Station --------------------------------------------------------
+
+[station.operator_callsign]
+title          = "Amateur callsign"
+help           = """Your amateur radio callsign (uppercase).
+Used as the operator identity for HamSCI / PSWS metadata."""
+example        = "AC0G"
+validator_hint = "1-9 letters/digits/slashes"
+required       = true
+
+[station.station_id]
+title          = "PSWS station ID (HF-GPS-TEC)"
+help           = """The PSWS-assigned station ID for HF-GPS-TEC
+uploads.  PSWS treats each measurement as its own station, so this
+ID is distinct from a co-resident hf-timestd's Grape ID and
+mag-recorder's RM3100 ID.
+
+Register at https://pswsnetwork.eng.ua.edu and copy the assigned
+ID (e.g. AC0G-HFGT or S-prefixed)."""
+example        = "AC0G-HFGT"
+required       = true
+
+[station.latitude_deg]
+title          = "Station latitude (decimal degrees)"
+help           = """Antenna latitude in decimal degrees (positive
+north, negative south).  Used for PRN-beacon geometry."""
+example        = "38.8125"
+validator_hint = "decimal degrees, -90.0 to 90.0"
+required       = true
+
+[station.longitude_deg]
+title          = "Station longitude (decimal degrees)"
+help           = """Antenna longitude in decimal degrees (positive
+east, negative west)."""
+example        = "-90.4063"
+validator_hint = "decimal degrees, -180.0 to 180.0"
+required       = true
+
+[station.altitude_m]
+title          = "Station altitude (meters AMSL)"
+help           = """Antenna height above mean sea level, in meters.
+0.0 is acceptable if you don't have a measured value -- the
+ionospheric inversion is mostly insensitive to receiver altitude."""
+example        = "230.0"
+validator_hint = "meters AMSL"
+required       = false
+
+# --- ka9q-radio binding --------------------------------------------
+
+[ka9q.status_address]
+title          = "ka9q-radio mDNS status host"
+help           = """The mDNS hostname of the radiod instance this
+recorder consumes RTP from -- always .local, never an IP."""
+example        = "bee1-status.local"
+validator_hint = "must end with .local"
+required       = true
+
+# Tier 1 — filter guard bandwidth around each beacon.  Algorithm
+# constant, not an operator knob.
+[ka9q.filter_guard_hz]
+hidden = true
+
+# --- Mode -----------------------------------------------------------
+
+[mode.mode]
+title          = "Processing mode"
+help           = """Acquisition mode:
+
+  auto      (default) per-beacon codeless detection; falls back to
+            coded acquisition when a code library is available.
+  codeless  forced codeless acquisition (use when you don't have
+            the PRN code library for your enabled transmitters)."""
+example        = "auto"
+validator_hint = '"auto" or "codeless"'
+required       = false
+
+# --- Sinks ----------------------------------------------------------
+
+[sinks.local_jsonl]
+title          = "Write decoded JSONL locally?"
+help           = """Always-on local sink: append-only JSONL files
+of decoded PRN-beacon dispersion measurements.  Most operators
+leave this ON; the file is your local audit trail."""
+required       = true
+
+[sinks.hamsci_sink]
+title          = "Upload to HamSCI / PSWS?"
+help           = """Push per-cycle dispersion measurements to the
+HamSCI / PSWS aggregator.  Requires a registered PSWS station_id
+and SSH key.  Turn OFF for offline / development runs."""
+required       = false
+
+[sinks.jro_out_mod]
+title          = "Write JRO-format output? (advanced)"
+help           = """JRO (Jicamarca Radio Observatory) legacy output
+format.  Turn ON only if you're a JRO collaborator who needs the
+format conversion; OFF otherwise."""
+required       = false
+
+# --- Processing (algorithm-tuning knobs) ---------------------------
+#
+# Tier 1 — PRN protocol constants (chip rate, code length, code
+# period define the beacon waveform; not operator-set):
+
+[processing.chip_microseconds]
+hidden = true
+
+[processing.code_chips]
+hidden = true
+
+[processing.code_period_ms]
+hidden = true
+
+# Tier 1 — internal algorithm tuning (coherent reps / integration /
+# incoherent windows / pseudorange bounds are tuned to the PRN
+# beacon protocol and the ionospheric channel; operators should not
+# need to touch these):
+
+[processing.coherent_reps]
+hidden = true
+
+[processing.coherent_seconds]
+hidden = true
+
+[processing.incoherent_windows]
+hidden = true
+
+[processing.max_pseudorange_km]
+hidden = true
+
+[processing.min_pseudorange_km]
+hidden = true
+
+# Tier 2 — operator-tuneable thresholds (vary with site RF
+# environment).
+
+[processing.codeless_detection_threshold_db]
+title          = "Codeless detection threshold (dB)"
+help           = """SNR floor for accepting a codeless acquisition.
+Raise when your site is noisy and you're seeing spurious
+detections; lower if you're missing real beacons in clean
+conditions."""
+example        = "6.0"
+validator_hint = "float dB (typically 4..10)"
+required       = false
+
+[processing.codeless_integration_seconds]
+title          = "Codeless integration window (seconds)"
+help           = """How many seconds of receive samples to integrate
+in the codeless detector.  Longer = better SNR but lower time
+resolution."""
+example        = "60.0"
+validator_hint = "float seconds"
+required       = false
+
+[processing.snr_threshold_db]
+title          = "Coded SNR threshold (dB)"
+help           = """SNR floor for accepting a coded acquisition.
+Set per your site noise floor and the strength of the beacons
+you're chasing."""
+example        = "8.0"
+validator_hint = "float dB"
+required       = false
