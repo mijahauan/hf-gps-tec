@@ -127,3 +127,9 @@ verb         = "hf-gps-tec"
 description  = "hf-gps-tec PRN-beacon detection records (per freq/window)"
 verbose      = true
 per_instance = true
+
+[client_features.receiver_channels]
+description  = "PRN-beacon RF channels (one per enabled [[frequency]])"
+per_instance = true
+parser_file  = "src/hf_gps_tec/sigmond_tui.py"
+parser_attr  = "parse_receiver_channels"
